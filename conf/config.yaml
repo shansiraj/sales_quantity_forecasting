@@ -1,0 +1,11 @@
+data:
+  train_dataset_path: 'dataset/training_data.csv'
+  test_dataset_path: 'dataset/test_data.csv'
+  store_dataset_path: 'dataset/outlet_info.csv'
+
+model:
+  test_size: 0.2
+  random_state: 42
+  n_estimators: 100
+  max_depth: 10
+  output_path: 'src/models/quantity_forecast_model.pkl'
