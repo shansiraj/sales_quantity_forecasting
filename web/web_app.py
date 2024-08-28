@@ -3,9 +3,13 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 from conf.config_loader import get_config
-from src.utils.load_util import load_model
+from src.utils.load_util import load_model,load_scaler
 from src.utils.time_features import create_time_features
+from src.utils.feature_scaling import feature_scaling_for_input
 import plotly.express as px
+from src.utils.data_loader import load_data
+from src.utils.data_processor import preprocess_data
+from src.utils.primary_keys import set_primary_keys
 
 def load_model_for_web_app():
     config = get_config('conf/config.yaml')
@@ -16,6 +20,12 @@ def load_model_for_web_app():
     return model
 
 def generate_input_data(start_date,end_date,selected_department,selected_outlet):
+
+    net_sales = 250355.130000
+    lag_1 = 883.000
+    rolling_mean_7 = 1393.351286
+    store_sales_ratio = 0
+    revenue_per_item = 0
 
     start_date_str = start_date.strftime('%Y-%m-%d')
     end_date_str = end_date.strftime('%Y-%m-%d')
@@ -57,6 +67,11 @@ def generate_input_data(start_date,end_date,selected_department,selected_outlet)
             'item_dept_Household': [household] * ((end_date - start_date).days + 1),
             'store_ABC': [store_abc] * ((end_date - start_date).days + 1),
             'store_XYZ': [store_xyz] * ((end_date - start_date).days + 1),
+            'net_sales':[net_sales] * ((end_date - start_date).days + 1),
+            'lag_1':[lag_1] * ((end_date - start_date).days + 1),
+            'rolling_mean_7':[rolling_mean_7] * ((end_date - start_date).days + 1),
+            'store_sales_ratio':[store_sales_ratio] * ((end_date - start_date).days + 1),
+            'revenue_per_item':[revenue_per_item] * ((end_date - start_date).days + 1),
         }
     
     input_data = pd.DataFrame(input_data_dic)
@@ -70,7 +85,21 @@ def generate_input_data(start_date,end_date,selected_department,selected_outlet)
                             'item_dept_Grocery',
                             'item_dept_Household',
                             'store_ABC',
-                            'store_XYZ']]
+                            'store_XYZ',
+                            'store_sales_ratio',
+                            'revenue_per_item',
+                            'net_sales',
+                            'lag_1',
+                            'rolling_mean_7']]
+    
+    config = get_config('conf/config.yaml')
+
+    is_feature_scaling = config['data_prep']['is_feature_scaling']
+
+    if (is_feature_scaling):
+        scaler_input_path = config['data_prep']['scaler_output_path']
+        scaler = load_scaler(scaler_input_path)
+        input_data = feature_scaling_for_input(scaler,input_data)
     
     return input_data
 
@@ -83,8 +112,8 @@ def generate_output_data(start_date,end_date,selected_department,selected_outlet
 
     output_data_dic = {
             'Date': pd.date_range(start=start_date_str, end=end_date_str, freq='D').date,
-            'Department': [selected_department] * ((end_date - start_date).days + 1),
             'Outlet': [selected_outlet] * ((end_date - start_date).days + 1),
+            'Department': [selected_department] * ((end_date - start_date).days + 1),
             'Predicted Sales': [None] * ((end_date - start_date).days + 1)
         }
     
@@ -94,6 +123,31 @@ def generate_output_data(start_date,end_date,selected_department,selected_outlet
 
     
     return output_data
+
+def generate_test_dataset_output_data(selected_department,selected_outlet):
+
+    # Loading the configuration
+    config = get_config('conf/config.yaml')
+    test_dataset = config['data']['test_dataset_path']
+    test_df = load_data(test_dataset)
+
+    test_pp_df = preprocess_data(test_df,False) # Outlier Handling is disabled
+    test_pp_df = set_primary_keys(test_pp_df)
+
+    filtered_data = test_pp_df[
+    (test_pp_df['store'] == selected_outlet) &
+    (test_pp_df['item_dept'] == selected_department)
+    ]
+
+    filtered_data.sort_values("date_id", inplace=True)
+
+    filtered_data['Date'] = filtered_data['date_id'].dt.date
+    filtered_data = filtered_data.drop(['date_id'], axis=1)
+
+    filtered_data['Actual Sales'] = filtered_data['item_qty']
+    filtered_data = filtered_data.drop(['item_qty'], axis=1)
+    
+    return filtered_data
 
 
 def generate_forecasting(input_data):
@@ -121,12 +175,12 @@ def format_page():
     }
     </style>
     <div class="sidebar-footer">
-        <p>Developed by D. Shan Siraj </br>
-        STNO: COMSCDS231P-023</p>
+        <p>Developed by D. Shan Siraj</p>
     </div>
     """,
     unsafe_allow_html=True
     )
+
 
 def main():
 
@@ -175,10 +229,6 @@ def main():
 
         # Display the line chart in the second column
         with col2:
-            # Set the 'Date' column as the index for time series plotting
-            # output_data.set_index('Date', inplace=True)
-            # st.write("Predicted Sales Line Chart")
-            # st.line_chart(output_data['Predicted Sales'])
 
             fig = px.line(output_data, x='Date', y='Predicted Sales', title="Predicted Sales Line Chart")
     
@@ -186,6 +236,53 @@ def main():
             fig.update_layout(
                 xaxis_title="Date",
                 yaxis_title="Predicted Sales",
+                xaxis=dict(showgrid=True),  # Show grid lines on x-axis
+                yaxis=dict(showgrid=True),  # Show grid lines on y-axis
+                title_x=0.5  # Center the title
+            )
+
+            # Display the Plotly chart in Streamlit
+            st.plotly_chart(fig)
+
+    if st.sidebar.button('Evaluate Model'):
+
+        test_data = generate_test_dataset_output_data(selected_department,selected_outlet)
+
+        # create the input dataset
+        input_data = generate_input_data(start_date,end_date,selected_department,selected_outlet)
+
+        # generate the predictions
+        predictions = generate_forecasting(input_data)
+
+        # create the input dataset
+        output_data = generate_output_data(start_date,end_date,selected_department,selected_outlet,predictions)
+
+        merged_df = pd.merge(test_data, output_data, on='Date')
+
+        merged_df = merged_df[['Date',
+                            'Outlet',
+                            'Department',
+                            'Actual Sales',
+                            'Predicted Sales']]
+
+        # Create two columns
+        col1, col2 = st.columns([1, 2])
+
+        # Display the DataFrame in the first column
+        with col1:
+            st.write("Data Overview")
+            st.write(merged_df)
+
+
+        # Display the line chart in the second column
+        with col2:
+
+            fig = px.line(merged_df, x='Date', y=['Actual Sales', 'Predicted Sales'], title="Actual vs Predicted Sales")
+    
+            # Customize the layout to add grid lines
+            fig.update_layout(
+                xaxis_title="Date",
+                yaxis_title="Actual",
                 xaxis=dict(showgrid=True),  # Show grid lines on x-axis
                 yaxis=dict(showgrid=True),  # Show grid lines on y-axis
                 title_x=0.5  # Center the title

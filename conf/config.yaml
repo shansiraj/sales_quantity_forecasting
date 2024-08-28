@@ -3,9 +3,14 @@ data:
   test_dataset_path: 'dataset/test_data.csv'
   store_dataset_path: 'dataset/outlet_info.csv'
 
+data_prep:
+  is_feature_scaling: True
+  scaler_output_path: 'src/utils/feature_scaler.pkl'
+  
 model:
-  test_size: 0.2
-  random_state: 42
-  n_estimators: 100
-  max_depth: 10
+  is_model_selection: True
+  is_hp_tuning : True
+  is_feature_importance_analysis : True
+  is_model_evaluation: True
   output_path: 'src/models/quantity_forecast_model.pkl'
+

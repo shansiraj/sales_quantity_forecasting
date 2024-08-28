@@ -6,6 +6,10 @@ def save_model(model, filename):
     joblib.dump(model, filename)
     print(f"Model saved to {filename}")
 
+def save_feature_scaler(scaler,filename):
+    joblib.dump(scaler, filename)
+    print(f"Scaler saved to {filename}")
+
 def save_predictions(predictions, filename):
     os.makedirs(os.path.dirname(filename), exist_ok=True)
     predictions.to_csv(filename, index=False)

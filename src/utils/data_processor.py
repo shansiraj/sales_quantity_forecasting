@@ -8,21 +8,18 @@ def preprocess_data(df,is_handing_outliers):
     # Drop invoice_num column
     df_pp = df.drop(['invoice_num'], axis=1)
 
-    # Change the data type of date_id column
-    df_pp['date_id'] = pd.to_datetime(df_pp['date_id'])
-
-    # Aggregate the Sales Quantity to generate summary report
-    df_pp = df_pp.groupby(['date_id', 'item_dept', 'store'])['item_qty'].sum().reset_index()
-
-    # Dropping possible missing values after aggregation
+    # Dropping possible records with missing values
     df_pp = df_pp.dropna()
 
-    # Sorting the dataset by date
-    df_pp.sort_values("date_id", inplace=True)
+    # Change the data type of date_id column
+    df_pp['date_id'] = pd.to_datetime(df_pp['date_id'])
 
     # Handing outliers
     if (is_handing_outliers):
         df_pp = handle_outliers(df_pp)
+
+    if is_missing_dates(df_pp):
+        pass
 
     print ("Data preprocessing ended")
 
@@ -46,3 +43,41 @@ def handle_outliers(df):
     print ("Outlier handling ended")
 
     return df_pp
+
+
+def is_missing_dates(df):
+    """Checking missing dates in the date field"""
+    print ("Checking missing dates started")
+
+    # Copying the DataFrame
+    df_copy = df.copy()
+
+    df_copy.set_index('date_id', inplace=True)
+
+    # Step 1: Identify the start and end dates of the actual data
+    start_date = df_copy.index.min()
+    end_date = df_copy.index.max()
+
+    print("DataFrame Index Range:")
+    print(df_copy.index.min(), df_copy.index.max())
+
+    # Step 2: Generate a complete range of dates
+    complete_date_range = pd.date_range(start=start_date, end=end_date, freq='D')
+
+    # Step 3: Find missing dates
+    missing_dates = complete_date_range.difference(df_copy.index)
+
+    print ("Checking missing dates ended")
+
+    # Display missing dates
+    if missing_dates.empty:
+        print ("No missing dates")
+        return False
+    else:
+        print("Missing Dates:")
+        print(missing_dates)
+        return True
+    
+
+
+    
