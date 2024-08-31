@@ -19,12 +19,7 @@ from src.utils.feature_scaling import apply_feature_scaling
 from src.utils.feature_target_variable import define_features_and_target_variables
 from src.utils.featrue_encoding import encode_features
 from src.utils.feature_selection import select_features
-from src.utils.save_util import save_model
-from src.models.train_model import train_model
-from src.models.evaluate_model import test_model, display_model_evaluation_plot
-from src.models.model_selection import select_model,create_ml_model
-from src.models.hyperparameter_tuning import optimize_hyperparameter
-from src.models.feature_importance import analyze_feature_importance
+from src.utils.set_feature_values import setting_avg_feature_values
 from conf.config_loader import get_config
 
 def pipeline():
@@ -85,5 +80,9 @@ def pipeline():
     if (is_feature_scaling):
         scaler_output_path = config['data_prep']['scaler_output_path']
         train_features,test_features = apply_feature_scaling(train_features,test_features,scaler_output_path)
+
+    # Save model
+    avg_feature_output_path = config['data_prep']['avg_feature_output_path']
+    setting_avg_feature_values(train_features,avg_feature_output_path)
 
     return train_features,train_target,test_features,test_target

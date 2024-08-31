@@ -13,6 +13,7 @@ def select_features(df):
             'item_dept_Household',
             'store_ABC',
             'store_XYZ',
+            'item_count',
             'store_sales_ratio',
             'revenue_per_item',
             'net_sales',

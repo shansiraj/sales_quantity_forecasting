@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 from conf.config_loader import get_config
-from src.utils.load_util import load_model,load_scaler
+from src.utils.load_util import load_model,load_scaler,load_avg_feature_values
 from src.utils.time_features import create_time_features
 from src.utils.feature_scaling import feature_scaling_for_input
 import plotly.express as px
@@ -21,11 +21,16 @@ def load_model_for_web_app():
 
 def generate_input_data(start_date,end_date,selected_department,selected_outlet):
 
-    net_sales = 250355.130000
-    lag_1 = 883.000
-    rolling_mean_7 = 1393.351286
-    store_sales_ratio = 0
-    revenue_per_item = 0
+    config = get_config('conf/config.yaml')
+    avg_feature_input_path = config['data_prep']['avg_feature_output_path']
+    avg_feature_values = load_avg_feature_values(avg_feature_input_path)
+
+    net_sales = avg_feature_values['net_sales'] # 250355.130000 
+    lag_1 = avg_feature_values['net_sales'] #883.000
+    rolling_mean_7 = avg_feature_values['net_sales'] #1393.351286
+    item_count = avg_feature_values['net_sales'] #3
+    store_sales_ratio = avg_feature_values['net_sales'] #0
+    revenue_per_item = avg_feature_values['net_sales'] #0
 
     start_date_str = start_date.strftime('%Y-%m-%d')
     end_date_str = end_date.strftime('%Y-%m-%d')
@@ -72,6 +77,7 @@ def generate_input_data(start_date,end_date,selected_department,selected_outlet)
             'rolling_mean_7':[rolling_mean_7] * ((end_date - start_date).days + 1),
             'store_sales_ratio':[store_sales_ratio] * ((end_date - start_date).days + 1),
             'revenue_per_item':[revenue_per_item] * ((end_date - start_date).days + 1),
+            'item_count':[item_count] * ((end_date - start_date).days + 1),
         }
     
     input_data = pd.DataFrame(input_data_dic)
@@ -86,6 +92,7 @@ def generate_input_data(start_date,end_date,selected_department,selected_outlet)
                             'item_dept_Household',
                             'store_ABC',
                             'store_XYZ',
+                            'item_count',
                             'store_sales_ratio',
                             'revenue_per_item',
                             'net_sales',

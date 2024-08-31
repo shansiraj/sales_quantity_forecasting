@@ -10,6 +10,11 @@ def save_feature_scaler(scaler,filename):
     joblib.dump(scaler, filename)
     print(f"Scaler saved to {filename}")
 
+def save_avg_feature_values(avg_feature_values, filename):
+    # os.makedirs(os.path.dirname(filename), exist_ok=True)
+    joblib.dump(avg_feature_values, filename)
+    print(f"Average feature values saved to {filename}")
+
 def save_predictions(predictions, filename):
     os.makedirs(os.path.dirname(filename), exist_ok=True)
     predictions.to_csv(filename, index=False)

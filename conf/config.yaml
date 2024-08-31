@@ -6,6 +6,7 @@ data:
 data_prep:
   is_feature_scaling: True
   scaler_output_path: 'src/utils/feature_scaler.pkl'
+  avg_feature_output_path: 'src/utils/avg_feature_values.pkl'
   
 model:
   is_model_selection: True
@@ -13,4 +14,6 @@ model:
   is_feature_importance_analysis : True
   is_model_evaluation: True
   output_path: 'src/models/quantity_forecast_model.pkl'
+
+
 

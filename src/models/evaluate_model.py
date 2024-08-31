@@ -18,6 +18,18 @@ def test_model(model,X_test,y_test):
     print (f"Validation MSE: {mse:.2f}") # Mean Squared Error (MSE): Average squared error, penalizing larger errors more.
     print (f"Validation R2: {r2:.2f}") # R-squared: Measure of how well the model explains the variance in the data.
     
+    store_wise_mape = calculate_store_wise_mape(X_test,y_test,y_pred)
+    store_wise_department_wise_mape = calculate_store_wise_group_wise_mape(X_test,y_test,y_pred)
+
+    print ("MAPE on Date and Store :")
+    print (store_wise_mape)
+    print()
+    print ("MAPE on Date, Store and Department :")
+    print (store_wise_department_wise_mape )
+
+    store_wise_mape.to_csv('src/models/store_wise_mape.csv', index=False)
+    store_wise_department_wise_mape.to_csv('src/models/store_wise_department_wise_mape.csv', index=False)
+
     evaluation_matrics = {'MAPE':mape,
                         'MAE':mae,
                         'RMSE': rmse,
@@ -28,42 +40,31 @@ def test_model(model,X_test,y_test):
     return evaluation_matrics
 
 
-def display_model_evaluation_plot(x_test_without_preprocess,model,X_test,y_test):
+def calculate_store_wise_mape(x_test,y_test, y_pred):
 
-    y_pred = model.predict(X_test)
+    y_test = pd.Series(y_test, name='y_test')
+    y_pred = pd.Series(y_pred, name='y_pred')
 
-    print (x_test_without_preprocess)
+    # Combine x_test with y_test and y_pred
+    result_df = pd.concat([x_test, y_test, y_pred], axis=1)
 
-    # df_deep_copy['year'] = pd.to_numeric(df_deep_copy['year'], errors='coerce')
-    # df_deep_copy['month'] = pd.to_numeric(df_deep_copy['month'], errors='coerce')
-    # df_deep_copy['day'] = pd.to_numeric(df_deep_copy['day'], errors='coerce')
+    
+    mape = result_df.groupby(['year','month','day','store_ABC', 'store_XYZ']).apply(
+        lambda x: mean_absolute_percentage_error(x['y_test'], x['y_pred'])
+    ).reset_index(name='mape')
 
-    # # Create a 'date' column
-    # df_deep_copy['date'] = pd.to_datetime(df_deep_copy[[ 'day','month','year']])
+    return mape
 
-    # Plotting
-    plt.figure(figsize=(14, 7))
+def calculate_store_wise_group_wise_mape(x_test,y_test, y_pred):
 
-    # Plot actual values
-    plt.plot(x_test_without_preprocess['date_id'], y_test, label='Actual', color='blue', marker='o', linestyle='-', markersize=4)
+    y_test = pd.Series(y_test, name='y_test')
+    y_pred = pd.Series(y_pred, name='y_pred')
 
-    # Plot predicted values
-    # plt.plot(x_test_without_preprocess['date_id'],y_pred, label='Predicted', color='red', marker='x', linestyle='--', markersize=4)
+    # Combine x_test with y_test and y_pred
+    result_df = pd.concat([x_test, y_test, y_pred], axis=1)
 
+    mape = result_df.groupby(['year','month','day','store_ABC', 'store_XYZ','item_dept_Beverages','item_dept_Grocery','item_dept_Household']).apply(
+        lambda x: mean_absolute_percentage_error(x['y_test'], x['y_pred'])
+    ).reset_index(name='mape')
 
-    # # Plot actual values
-    # plt.plot(range(len(y_test)), y_test, label='Actual', color='blue', marker='o')
-
-    # # Plot predicted values
-    # plt.plot(range(len(y_pred)), y_pred, label='Predicted', color='red', marker='x')
-
-    # Adding labels and title
-    plt.xlabel('Actual Values')
-    plt.ylabel('Predicted Values')
-    plt.title('Actual vs Predicted Values')
-    plt.legend()
-    plt.grid(True)
-
-    # Show plot
-    plt.show()
-
+    return mape
