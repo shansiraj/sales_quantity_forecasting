@@ -57,8 +57,8 @@ def pipeline(train_features,train_target,test_features,test_target):
         test_model(model,test_features,test_target)
 
     # Save model
-    # model_output_path = config['model']['output_path']
-    # save_model(model,model_output_path)
+    model_output_path = config['model']['output_path']
+    save_model(model,model_output_path)
 
     print(train_features.head(5))
 
