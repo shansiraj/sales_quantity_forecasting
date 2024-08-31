@@ -26,11 +26,13 @@ def generate_input_data(start_date,end_date,selected_department,selected_outlet)
     avg_feature_values = load_avg_feature_values(avg_feature_input_path)
 
     net_sales = avg_feature_values['net_sales'] # 250355.130000 
-    lag_1 = avg_feature_values['net_sales'] #883.000
-    rolling_mean_7 = avg_feature_values['net_sales'] #1393.351286
-    item_count = avg_feature_values['net_sales'] #3
-    store_sales_ratio = avg_feature_values['net_sales'] #0
-    revenue_per_item = avg_feature_values['net_sales'] #0
+    lag_1 = avg_feature_values['lag_1'] #883.000
+    rolling_mean_7 = avg_feature_values['rolling_mean_7'] #1393.351286
+    item_count = avg_feature_values['item_count'] #3
+    store_sales_ratio = avg_feature_values['store_sales_ratio'] #0
+    revenue_per_item = avg_feature_values['revenue_per_item'] #0
+
+    print(avg_feature_values,'..........................')
 
     start_date_str = start_date.strftime('%Y-%m-%d')
     end_date_str = end_date.strftime('%Y-%m-%d')

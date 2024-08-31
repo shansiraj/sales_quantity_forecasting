@@ -75,14 +75,14 @@ def pipeline():
     train_features,train_target = define_features_and_target_variables(train_pp_df)
     test_features,test_target = define_features_and_target_variables(test_pp_df)
 
+    # Save avg feature values
+    avg_feature_output_path = config['data_prep']['avg_feature_output_path']
+    setting_avg_feature_values(train_features,avg_feature_output_path)
+
     # Feature scaling
     is_feature_scaling = config['data_prep']['is_feature_scaling']
     if (is_feature_scaling):
         scaler_output_path = config['data_prep']['scaler_output_path']
         train_features,test_features = apply_feature_scaling(train_features,test_features,scaler_output_path)
-
-    # Save model
-    avg_feature_output_path = config['data_prep']['avg_feature_output_path']
-    setting_avg_feature_values(train_features,avg_feature_output_path)
 
     return train_features,train_target,test_features,test_target
